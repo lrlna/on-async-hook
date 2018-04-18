@@ -1,10 +1,10 @@
-var onAsyncHooks = require('./')
-var http = require('http')
+const onAsyncHooks = require('./')
+const http = require('http')
 
-onAsyncHooks(function (data) {
+onAsyncHooks(data => {
   console.log(data)
 })
 
-http.createServer(function (req, res) {
+http.createServer((req, res) => {
   res.end('Hello qts')
 }).listen(8080)
