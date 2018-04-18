@@ -1,9 +1,7 @@
-var assert = require('assert')
-var NS_PER_SEC = 1e9
+const assert = require('assert')
+const NS_PER_SEC = 1e9
 
-module.exports = onAsyncHook
-
-function onAsyncHook (opts, cb) {
+function onAsyncHook(opts, cb) {
   if (!cb) {
     cb = opts
     opts = {}
@@ -13,38 +11,41 @@ function onAsyncHook (opts, cb) {
   assert.equal(typeof cb, 'function', 'on-async-hook: cb should be type function')
 
   // catch this if we are not in node 8
+  let asyncHooks;
   try {
-    var asyncHooks = require('async_hooks')
+    asyncHooks = require('async_hooks')
   } catch (e) {
-    return function () {}
+    return function () { }
   }
 
-  var links = {}
-  var traces = {}
-  var spans = {}
+  const links = {}
+  const traces = {}
+  const spans = {}
 
-  var hooks = {
+  const hooks = {
     init: init,
+    before: before, 
+    after: after,
     destroy: destroy
   }
 
-  var asyncHook = asyncHooks.createHook(hooks)
+  const asyncHook = asyncHooks.createHook(hooks)
   asyncHook.enable()
 
   return function () {
     asyncHook.disable()
   }
 
-  function init (asyncId, type, triggerId) {
-    var currentId = asyncHooks.executionAsyncId()
+  function init(asyncId, type, triggerId) {
+    const currentId = asyncHooks.executionAsyncId()
     // don't want the initial start TCPWRAP
     if (currentId === 1 && type === 'TCPWRAP') return
     if (triggerId === 0) return
 
-    var time = process.hrtime()
-    var span = createSpan(asyncId, type, triggerId, time)
-    var traceId = links[triggerId]
-    var trace = null
+    const time = process.hrtime()
+    const span = createSpan(asyncId, type, triggerId, time)
+    let traceId = links[triggerId]
+    let trace = null
 
     if (!traceId) {
       traceId = asyncId
@@ -58,27 +59,51 @@ function onAsyncHook (opts, cb) {
     trace.spans.push(span)
   }
 
-  function destroy (asyncId) {
-    var time = process.hrtime()
-    var span = spans[asyncId]
+  function before(asyncId, type, triggerId) {
+    const time = process.hrtime()
+    let span = spans[asyncId]
+
+    if (!span) {
+      span = createSpan(asyncId, type, triggerId, time)
+    }
+    span.beforeTime = time[0] * NS_PER_SEC + time[1]
+    span.durationBefore = span.beforeTime - span.startTime
+  }
+
+  function after(asyncId, type, triggerId) {
+    const time = process.hrtime()
+    let span = spans[asyncId]
+
+    if (!span) {
+      span = createSpan(asyncId, type, triggerId, time)
+    }
+    span.afterTime = time[0] * NS_PER_SEC + time[1]
+    span.durationAfter = span.afterTime - span.startTime
+  }
+
+  function destroy(asyncId) {
+    const time = process.hrtime()
+    const span = spans[asyncId]
     if (!span) return
+
     span.endTime = time[0] * NS_PER_SEC + time[1]
     span.duration = span.endTime - span.startTime
-    var trace = traces[asyncId]
+    const trace = traces[asyncId]
     if (!trace) return
+
     trace.endTime = time[0] * NS_PER_SEC + time[1]
     trace.duration = trace.endTime - trace.startTime
     links[asyncId] = null
     traces[asyncId] = null
-    trace.spans.forEach(function (span) {
-      var id = span.id
+    trace.spans.forEach((span) => {
+      const id = span.id
       links[id] = null
       spans[id] = null
     })
     cb(trace)
   }
 
-  function createSpan (id, type, parent, time) {
+  function createSpan(id, type, parent, time) {
     return {
       id: id,
       type: type,
@@ -87,7 +112,7 @@ function onAsyncHook (opts, cb) {
     }
   }
 
-  function createTrace (time, id) {
+  function createTrace(time, id) {
     return {
       startTime: time[0] * NS_PER_SEC + time[1],
       id: id,
@@ -95,3 +120,5 @@ function onAsyncHook (opts, cb) {
     }
   }
 }
+
+module.exports = onAsyncHook
