@@ -1,5 +1,5 @@
 var assert = require('assert')
-var NS_PER_SEC = 1e9
+var NS_PER_SEC = 1e3
 
 module.exports = onAsyncHook
 
@@ -49,13 +49,15 @@ function onAsyncHook (opts, cb) {
     if (!traceId) {
       traceId = asyncId
       trace = createTrace(time, traceId)
-      traces[asyncId] = trace
+    
     } else {
       trace = traces[traceId]
     }
     links[asyncId] = traceId
     spans[asyncId] = span
     trace.spans.push(span)
+    
+    traces[asyncId] = trace
   }
 
   function destroy (asyncId) {
@@ -67,7 +69,7 @@ function onAsyncHook (opts, cb) {
     var trace = traces[asyncId]
     if (!trace) return
     trace.endTime = time[0] * NS_PER_SEC + time[1]
-    trace.duration = trace.endTime - trace.startTime
+    trace.duration = (trace.endTime - trace.startTime)*1e-9
     links[asyncId] = null
     traces[asyncId] = null
     trace.spans.forEach(function (span) {
