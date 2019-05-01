@@ -49,10 +49,11 @@ function onAsyncHook (opts, cb) {
     if (!traceId) {
       traceId = asyncId
       trace = createTrace(time, traceId)
-      traces[asyncId] = trace
+      
     } else {
       trace = traces[traceId]
     }
+    traces[asyncId] = trace
     links[asyncId] = traceId
     spans[asyncId] = span
     trace.spans.push(span)
