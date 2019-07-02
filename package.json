@@ -1,6 +1,6 @@
 {
   "name": "on-async-hook",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "async_hook trace emitter",
   "main": "index.js",
   "repository": "lrlna/on-async-hook",
