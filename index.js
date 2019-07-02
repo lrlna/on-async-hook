@@ -49,7 +49,6 @@ function onAsyncHook (opts, cb) {
     if (!traceId) {
       traceId = asyncId
       trace = createTrace(time, traceId)
-      
     } else {
       trace = traces[traceId]
     }
