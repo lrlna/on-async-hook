@@ -9,8 +9,8 @@ function onAsyncHook (opts, cb) {
     opts = {}
   }
 
-  assert.equal(typeof opts, 'object', 'on-async-hook: opts should be type object')
-  assert.equal(typeof cb, 'function', 'on-async-hook: cb should be type function')
+  assert.strictEqual(typeof opts, 'object', 'on-async-hook: opts should be type object')
+  assert.strictEqual(typeof cb, 'function', 'on-async-hook: cb should be type function')
 
   // catch this if we are not in node 8
   try {
